@@ -29,6 +29,9 @@ public class EnvironmentManager : MonoBehaviour
     Texture2D _sourceImage;
     UIManager _uiManager;
 
+    Pix2Pix _pix2Pix;
+
+
     #endregion
 
     #region Métodos do Unity
@@ -52,6 +55,9 @@ public class EnvironmentManager : MonoBehaviour
         var maxSize = _uiManager.MaxGridSize;
         _grid = new VoxelGrid(gridSize, maxSize, transform.position, 1f, transform);
 
+        _pix2Pix = new Pix2Pix();
+
+
     }
 
     void Update()
@@ -60,19 +66,82 @@ public class EnvironmentManager : MonoBehaviour
         HandleHeight();
         // Limpar o grid utilizando a tecla "C"
         if (Input.GetKeyDown(KeyCode.C)) _grid.ClearGrid();
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            _grid.ClearGrid();
+            PopulateRandomBoxes(3, 3, 5, 5, 15);
+        }
         
     }
 
     #endregion
+
+    public void PredictAndUpdate()
+    {
+        _grid.ClearReds();
+        var image = _grid.ImageFromGrid();
+        var resize = ImageReadWrite.Resize256(image, Color.white);
+        _sourceImage = _pix2Pix.Predict(resized);
+        TextureScale.Point(_sourceImage, _grid.Size.x, _grid.Size.z);
+        UpdateReds();
+
+    }
+
+
 
     /// <summary>
     /// Expõe o método de criação do set de treinamento para um botão
     /// </summary>
     public void GenerateSampleSet()
     {
-
+        PopulateBoxesAndSave(500, 3, 10, 3, 10, 3, 10);
     }
 
+    private void PopulateBoxesAndSave(int samples, int minQuantity, int maxQuantity, int minX, int maxX, int minZ, int maxZ)
+    {
+        string directory = Path.Combine(Directory.GetCurrentDirectory(), "Samples");
+        if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+
+        for (int i = 0; i < samples; i++)
+        {
+            _grid.ClearGrid();
+            int quatity = Random.Range(minQuantity, maxQuantity);
+            PopulateRandomBoxes(quatity, minX, maxX, minZ, maxZ);
+
+            var image = _grid.ImageFromGrid(transparent: true);
+            var resized = ImageReadWrite.Resize256(image, Color.white);
+            
+            string fileName = Path.Combine(directory, $"sample_{i.ToString("D4")}.png");
+            ImageReadWrite.SaveImage(resized, fileName);
+        }
+    }
+
+    private void PopulateRandomBoxes(int quantity, int minX, int maxX, int minZ, int maxZ)
+    {
+        for (int i = 0; i < quantity; i++)
+        {
+            CreateRandomBox(minX, maxX, minZ, maxZ);
+        }
+    }
+
+    private void CreateRandomBox(int minX, int maxX, int minZ, int maxZ)
+    {
+        int sizeX = Random.Range(minX, maxX);
+        int sizeZ = Random.Range(minZ, maxZ);
+
+        Vector3Int size = new Vector3Int(sizeX, _grid.Size.y - 1, sizeZ);
+
+        int oX = Random.Range(0, _grid.Size.x);
+        int oZ = Random.Range(0, _grid.Size.z);
+
+        Vector3Int origin = new Vector3Int(oX, 0, oZ);
+
+        Voxel corner = _grid.Voxels(origin.x, origin.y, origin.z);
+
+        _grid.BoxFromCorner(corner, size);
+
+    }
 
     public void SaveGrid(string name)
     {
@@ -147,6 +216,7 @@ public class EnvironmentManager : MonoBehaviour
         {
             _grid.MakeBox(_height);
             _stage = AppStage.Neutral;
+            PredictAndUpdate();
         }
     }
 

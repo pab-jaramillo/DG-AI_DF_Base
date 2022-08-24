@@ -33,6 +33,20 @@ public class Pix2Pix
 
     #region Métodos públicos
 
+    public Texture2D Predict(Texture2D image)
+    {
+        var imageTensor = new Tensor(image, chanels: 3);
+        var normalisedTensor = NormaliseTensor(imageTensor, 0f, 1f, -1f, 1f);
+        _worker.Execute(normalisedTensor);
+        var outputTensor = _worker.PeekOutput();
+        var prediction = Tensor2Image(outputTensor, image);
+
+        imageTensor.Dispose();
+        normalisedTensor.Dispose();
+        outputTensor.Dispose();
+
+        return prediction;
+    }
 
     #endregion
 
