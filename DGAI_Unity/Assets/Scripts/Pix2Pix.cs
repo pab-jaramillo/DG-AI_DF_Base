@@ -1,11 +1,11 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Barracuda;
 
 /// <summary>
-/// Esta classe permite a execução de um modelo treinado de Pix2Pix para
-/// realizer inferências a partir de imagens novas
+/// Esta classe permite a execuï¿½ï¿½o de um modelo treinado de Pix2Pix para
+/// realizer inferï¿½ncias a partir de imagens novas
 /// </summary>
 public class Pix2Pix
 {
@@ -20,7 +20,7 @@ public class Pix2Pix
     #region Construtor
 
     /// <summary>
-    /// Construtor de um objeto de inferência Pix2pix
+    /// Construtor de um objeto de inferï¿½ncia Pix2pix
     /// </summary>
     public Pix2Pix()
     {
@@ -31,18 +31,34 @@ public class Pix2Pix
 
     #endregion
 
-    #region Métodos públicos
+    #region Mï¿½todos pï¿½blicos
 
+    // 01 Criar o mï¿½todo de previsï¿½o do modelo
+    /// <summary>
+    /// Executa o modelo de inferï¿½ncia em uma imagem e gera a previsï¿½o de uma imagem traduzida
+    /// </summary>
+    /// <param name="image"></param>
+    /// <returns></returns>
     public Texture2D Predict(Texture2D image)
     {
-        var imageTensor = new Tensor(image, chanels: 3);
-        var normalisedTensor = NormaliseTensor(imageTensor, 0f, 1f, -1f, 1f);
-        _worker.Execute(normalisedTensor);
-        var outputTensor = _worker.PeekOutput();
-        var prediction = Tensor2Image(outputTensor, image);
+        // 02 Traduz a imagem original para um tensor de 3 canais (RGB)
+        Tensor imageTensor = new Tensor(image, channels: 3);
 
+        // 03 Normaliza o tensor para o campo que o modelo espera
+        var normalisedInput = NormaliseTensor(imageTensor, 0f, 1f, -1f, 1f);
+
+        // 04 Executa o modelo no tensor
+        _worker.Execute(normalisedInput);
+
+        // 05 Retorna o resultado da previsï¿½o do modelo
+        var outputTensor = _worker.PeekOutput();
+
+        // 07 Traduz o tensor para uma imagem
+        Texture2D prediction = Tensor2Image(outputTensor, image);
+
+        // 08 Descarta os tensores utilizados
         imageTensor.Dispose();
-        normalisedTensor.Dispose();
+        normalisedInput.Dispose();
         outputTensor.Dispose();
 
         return prediction;
@@ -50,7 +66,7 @@ public class Pix2Pix
 
     #endregion
 
-    #region Métodos privados
+    #region Mï¿½todos privados
 
     /// <summary>
     /// Traduz um tensor em Texture2D
@@ -78,10 +94,10 @@ public class Pix2Pix
     /// Normaliza um tensor para um campo determinado
     /// </summary>
     /// <param name="inputTensor"></param>
-    /// <param name="a1">Mínimo original</param>
-    /// <param name="a2">Máximo original</param>
-    /// <param name="b1">Mínimo esperado</param>
-    /// <param name="b2">Máximo esperado</param>
+    /// <param name="a1">Mï¿½nimo original</param>
+    /// <param name="a2">Mï¿½ximo original</param>
+    /// <param name="b1">Mï¿½nimo esperado</param>
+    /// <param name="b2">Mï¿½ximo esperado</param>
     /// <returns></returns>
     Tensor NormaliseTensor(Tensor inputTensor, float a1, float a2, float b1, float b2)
     {

@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -6,12 +6,12 @@ using UnityEngine.UI;
 using System.IO;
 
 /// <summary>
-/// Determina o estágio atual da aplicação
+/// Determina o estï¿½gio atual da aplicaï¿½ï¿½o
 /// </summary>
 public enum AppStage { Neutral = 0, Selecting = 1, Done = 2 }
 
 /// <summary>
-/// Classe que gerencia o ambiente da aplicação
+/// Classe que gerencia o ambiente da aplicaï¿½ï¿½o
 /// </summary>
 public class EnvironmentManager : MonoBehaviour
 {
@@ -23,41 +23,41 @@ public class EnvironmentManager : MonoBehaviour
     /// <summary>Determina a altura atual da caixas a serem criadas</summary>
     int _height;
 
-    /// <summary>Seed para controle dos números aleatórios</summary>
+    /// <summary>Seed para controle dos nï¿½meros aleatï¿½rios</summary>
     int _seed = 666;
+
+    // 09 (p2p) Cria o objeto de inferï¿½ncia do modelo Pix2Pix
+    /// <summary>Objeto de previsï¿½o do modelo Pix2Pix</summary>
+    Pix2Pix _pix2pix;
 
     Texture2D _sourceImage;
     UIManager _uiManager;
 
-    Pix2Pix _pix2Pix;
-
-
     #endregion
 
-    #region Métodos do Unity
+    #region Mï¿½todos do Unity
     void Start()
     {
         // Coleta o UIManager
         _uiManager = GameObject.Find("UIManager").transform.GetComponent<UIManager>();
-        if (_uiManager == null) Debug.LogError("UIManager não foi encontrado!");
-        
+        if (_uiManager == null) Debug.LogError("UIManager nï¿½o foi encontrado!");
+
         // Define as imagens que podem ser utilizadas manualmente
         _sourceImage = _uiManager.SetDropdownSources();
 
-        // Inicializa o motor de números aleatórios e a aplicação
+        // Inicializa o motor de nï¿½meros aleatï¿½rios e a aplicaï¿½ï¿½o
         Random.InitState(_seed);
         _stage = AppStage.Neutral;
 
-        // Inicializa o grid que será trabalhado
+        // Inicializa o grid que serï¿½ trabalhado
         _corners = new Voxel[2];
         var gridSize = _uiManager.GridSize;
         _height = gridSize.y;
         var maxSize = _uiManager.MaxGridSize;
         _grid = new VoxelGrid(gridSize, maxSize, transform.position, 1f, transform);
 
-        _pix2Pix = new Pix2Pix();
-
-
+        // 10 (p2p) Inicializa o objeto de inferï¿½ncia do modelo Pix2Pix
+        _pix2pix = new Pix2Pix();
     }
 
     void Update()
@@ -67,79 +67,138 @@ public class EnvironmentManager : MonoBehaviour
         // Limpar o grid utilizando a tecla "C"
         if (Input.GetKeyDown(KeyCode.C)) _grid.ClearGrid();
 
+        // 05 Cria caixas aleatï¿½rias utilizando a tecla "A"
         if (Input.GetKeyDown(KeyCode.A))
         {
+            // 06 Limpa o grid
             _grid.ClearGrid();
-            PopulateRandomBoxes(3, 3, 5, 5, 15);
+            // 07 Cria uma caixa aleatï¿½ria
+            //CreateRandomBox(3, 10, 5, 15);
+
+            // 10 Cria diversas caixas aleatï¿½rias
+            PopulateRandomBoxes(Random.Range(3, 10), 5, 15, 5, 15);
+            var image = _grid.ImageFromGrid();
+            _uiManager.SetInputImage(Sprite.Create(image, new Rect(0, 0, image.width, image.height), Vector2.one * 0.5f));
         }
-        
     }
 
     #endregion
 
-    public void PredictAndUpdate()
-    {
-        _grid.ClearReds();
-        var image = _grid.ImageFromGrid();
-        var resize = ImageReadWrite.Resize256(image, Color.white);
-        _sourceImage = _pix2Pix.Predict(resized);
-        TextureScale.Point(_sourceImage, _grid.Size.x, _grid.Size.z);
-        UpdateReds();
-
-    }
-
-
-
+    // 01 Criar mï¿½todo para criaï¿½ï¿½o de caixas aleatï¿½rias
     /// <summary>
-    /// Expõe o método de criação do set de treinamento para um botão
+    /// Cria uma caixa aleatï¿½riamente no grid, dentro dos limities de tamanho definidos
     /// </summary>
-    public void GenerateSampleSet()
+    /// <param name="minX"></param>
+    /// <param name="maxX"></param>
+    /// <param name="minZ"></param>
+    /// <param name="maxZ"></param>
+    private void CreateRandomBox(int minX, int maxX, int minZ, int maxZ)
     {
-        PopulateBoxesAndSave(500, 3, 10, 3, 10, 3, 10);
+        // 02 Define as coordenadas de origem aleatoriamente no grid
+        var oX = Random.Range(0, _grid.Size.x);
+        var oZ = Random.Range(0, _grid.Size.z);
+
+        var origin = new Vector3Int(oX, 0, oZ);
+
+        // 03 Define o tamaho da caixa 
+        var sizeX = Random.Range(minX, maxX);
+        var sizeY = Random.Range(3, _grid.Size.y);
+        var sizeZ = Random.Range(minZ, maxZ);
+        var size = new Vector3Int(sizeX, sizeY, sizeZ);
+
+        // 04 Cria a caixa
+        _grid.BoxFromCorner(_grid.Voxels[origin.x, origin.y, origin.z], size);
     }
 
-    private void PopulateBoxesAndSave(int samples, int minQuantity, int maxQuantity, int minX, int maxX, int minZ, int maxZ)
-    {
-        string directory = Path.Combine(Directory.GetCurrentDirectory(), "Samples");
-        if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
-
-        for (int i = 0; i < samples; i++)
-        {
-            _grid.ClearGrid();
-            int quatity = Random.Range(minQuantity, maxQuantity);
-            PopulateRandomBoxes(quatity, minX, maxX, minZ, maxZ);
-
-            var image = _grid.ImageFromGrid(transparent: true);
-            var resized = ImageReadWrite.Resize256(image, Color.white);
-            
-            string fileName = Path.Combine(directory, $"sample_{i.ToString("D4")}.png");
-            ImageReadWrite.SaveImage(resized, fileName);
-        }
-    }
-
+    // 08 Criar o mï¿½todo para criaï¿½ï¿½o de diversas caixas aleatï¿½rias
+    /// <summary>
+    /// Cria mï¿½ltiplas caixas aleatï¿½rias no grid com as propriedades definidas
+    /// </summary>
+    /// <param name="quantity">Quantidade de caixas</param>
+    /// <param name="minX">Tamanho mï¿½nimo em X</param>
+    /// <param name="maxX">Tamanho mï¿½ximo em X</param>
+    /// <param name="minZ">Tamanho mï¿½nimo em Z</param>
+    /// <param name="maxZ">Tamanho mï¿½ximo em Z</param>
     private void PopulateRandomBoxes(int quantity, int minX, int maxX, int minZ, int maxZ)
     {
+        // 09 Repetir o mï¿½todo de acordo com a quantidade
         for (int i = 0; i < quantity; i++)
         {
             CreateRandomBox(minX, maxX, minZ, maxZ);
         }
     }
 
-    private void CreateRandomBox(int minX, int maxX, int minZ, int maxZ)
+    // 11 Criar o mï¿½todo para criaï¿½ï¿½o do set de treinamento
+    /// <summary>
+    /// Cria mï¿½ltiplas caixas aleatï¿½rias no grid, diversas vezes e 
+    /// com quantidades variï¿½veis, de acordo com as propriedades definidas,
+    /// e salva imagens correspondentes no disco
+    /// </summary>
+    /// <param name="samples">Quantidade de grids/imagens a gerar</param>
+    /// <param name="minQuantity">Quantidade mï¿½nima de caixas por sample</param>
+    /// <param name="maxQuantity">Quantidade mï¿½xima de caixas por sample</param>
+    /// <param name="minX">Tamanho mï¿½nimo em X</param>
+    /// <param name="maxX">Tamanho mï¿½ximo em X</param>
+    /// <param name="minZ">Tamanho mï¿½nimo em Z</param>
+    /// <param name="maxZ">Tamanho mï¿½ximo em Z</param>
+    public void PopulateBoxesAndSave(int samples, int minQuantity, int maxQuantity, int minX, int maxX, int minZ, int maxZ)
     {
-        int sizeX = Random.Range(minX, maxX);
-        int sizeZ = Random.Range(minZ, maxZ);
+        // 12 Garatir que a pasta de destino existe
+        string directory = Path.Combine(Directory.GetCurrentDirectory(), "Samples");
+        if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+        // 13 Iterar de acordo com a quantidade de samples
+        for (int i = 0; i < samples; i++)
+        {
+            // 14 Limpar o grid
+            _grid.ClearGrid();
+            // 15 Definir quantidade aleatï¿½ria e criar as caixas aleatoriamente
+            int quantity = Random.Range(minQuantity, maxQuantity);
+            PopulateRandomBoxes(quantity, minX, maxX, minZ, maxZ);
 
-        Vector3Int size = new Vector3Int(sizeX, _grid.Size.y - 1, sizeZ);
+            // 16 Definir a imagem para o atual estado do grid
+            var image = _grid.ImageFromGrid(transparent: true);
+            // 17 Redimensionar a imagem para 256 x 256 px
+            var resized = ImageReadWrite.Resize256(image, Color.white);
 
-        int oX = Random.Range(0, _grid.Size.x);
-        int oZ = Random.Range(0, _grid.Size.z);
+            // 18 Criar o arquivo e salvar a imagem no disco
+            var fileName = Path.Combine(directory, $"sample_{i.ToString("D4")}.png");
+            ImageReadWrite.SaveImage(resized, fileName);
+        }
+    }
 
-        Vector3Int origin = new Vector3Int(oX, 0, oZ);
+    /// <summary>
+    /// Expï¿½e o mï¿½todo de criaï¿½ï¿½o do set de treinamento para um botï¿½o
+    /// </summary>
+    public void GenerateSampleSet()
+    {
+        // 19 Criar e salvar as imagens aleatï¿½rias
+        PopulateBoxesAndSave(500, 3, 10, 3, 10, 3, 10);
+    }
 
-        Voxel corner = _grid.Voxels(origin.x, origin.y, origin.z);
+    // 11 (p2p) Criar o mï¿½todo de previsï¿½o e atualizaï¿½ï¿½o do grid
+    /// <summary>
+    /// Executa o modelo Pix2Pix no atual estado do <see cref="VoxelGrid"/> e atualiza
+    /// o estado dos Voxels de acordo com os pixels da imagem resultante
+    /// </summary>
+    public void PredictAndUpdate()
+    {
+        // 12 (p2p) Limpar voxels vermelhos e gerar imagem
+        _grid.ClearReds();
+        var image = _grid.ImageFromGrid();
 
-        _grid.BoxFromCorner(corner, size);
+        // 13 (p2p) Redimensionar image
+        var resized = ImageReadWrite.Resize256(image, Color.white);
+
+        // 14 (p2p) Gerar previsï¿½o
+        _sourceImage = _pix2pix.Predict(resized);
+
+        // 15 (p2p) Redimensionar imagem para o tamnho do grid e atualizar os voxels vermelhos
+        TextureScale.Point(_sourceImage, _grid.Size.x, _grid.Size.z);
+        UpdateReds();
+
+        // 16 (p2p) Exibir as imagens produzidas na UI
+        _uiManager.SetInputImage(Sprite.Create(resized, new Rect(0, 0, resized.width, resized.height), Vector2.one * 0.5f));
+        _uiManager.SetOutputImage(Sprite.Create(_sourceImage, new Rect(0, 0, _sourceImage.width, _sourceImage.height), Vector2.one * 0.5f));
 
     }
 
@@ -147,7 +206,7 @@ public class EnvironmentManager : MonoBehaviour
     {
         if (name == "")
         {
-            Debug.Log("Não é possível salvar arquivo sem nome!");
+            Debug.Log("Nï¿½o ï¿½ possï¿½vel salvar arquivo sem nome!");
             return;
         }
         var directory = Path.Combine(Directory.GetCurrentDirectory(), $"Grids");
@@ -158,7 +217,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Expõe a função de atualizar os voxels com estado <see cref="VoxelState.Red"/>
+    /// Expï¿½e a funï¿½ï¿½o de atualizar os voxels com estado <see cref="VoxelState.Red"/>
     /// </summary>
     public void UpdateReds()
     {
@@ -216,6 +275,8 @@ public class EnvironmentManager : MonoBehaviour
         {
             _grid.MakeBox(_height);
             _stage = AppStage.Neutral;
+
+            // 17 (p2p) Executar a previsï¿½o apï¿½s o tï¿½rmino do processo de desenho
             PredictAndUpdate();
         }
     }
@@ -249,7 +310,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Executa a previsão do novo tamanho do grid
+    /// Executa a previsï¿½o do novo tamanho do grid
     /// </summary>
     /// <param name="newSize"></param>
     public void PreviewGridSize(Vector3Int newSize)
@@ -259,23 +320,23 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Expõe a função de ler uma imagem para a UI
+    /// Expï¿½e a funï¿½ï¿½o de ler uma imagem para a UI
     /// </summary>
     public void ReadImage()
     {
         _grid.ClearGrid();
         _grid.SetStatesFromImage(
-            _sourceImage, 
-            _uiManager.GetSturctureBase(), 
-            _uiManager.GetSturctureTop(), 
-            _uiManager.GetSturctureThickness(), 
+            _sourceImage,
+            _uiManager.GetSturctureBase(),
+            _uiManager.GetSturctureTop(),
+            _uiManager.GetSturctureThickness(),
             _uiManager.GetSturctureSensitivity());
     }
 
-    
+
 
     /// <summary>
-    /// Expõe a funlçao de limpar o grid para a UI
+    /// Expï¿½e a funlï¿½ao de limpar o grid para a UI
     /// </summary>
     public void ClearGrid()
     {
@@ -283,7 +344,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Expõe a função de atualizar a imagem atual pela UI
+    /// Expï¿½e a funï¿½ï¿½o de atualizar a imagem atual pela UI
     /// </summary>
     public void UpdateCurrentImage()
     {
