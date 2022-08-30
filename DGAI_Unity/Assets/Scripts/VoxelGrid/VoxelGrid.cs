@@ -5,11 +5,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Um grid tridimensional de <see cref="Voxel"/>
+/// A three-dimensional grid of <see cref="Voxel"/>
 /// </summary>
 public class VoxelGrid
 {
-    #region Campos públicos
+    #region Public Fields
 
     public Vector3Int Size;
     public Voxel[,,] Voxels;
@@ -19,7 +19,7 @@ public class VoxelGrid
 
     #endregion
 
-    #region Campos privados
+    #region Private Fields
 
     Voxel[,,] _allVoxels;
     Vector3Int _maxSize;
@@ -34,7 +34,7 @@ public class VoxelGrid
 
     #endregion
 
-    #region Construtores
+    #region Builders
 
     /// <summary>
     /// Constructor for a basic <see cref="VoxelGrid"/>
@@ -64,10 +64,10 @@ public class VoxelGrid
 
     #endregion
 
-    #region Métodos públicos
+    #region Public Methods
 
     /// <summary>
-    /// Modifica o tamanho deste grid, ativando ou desativando os voxels necessários
+    /// Modifies the size of this grid, activating or deactivating the necessary voxels
     /// </summary>
     /// <param name="newSize"></param>
     public void ChangeGridSize(Vector3Int newSize)
@@ -115,7 +115,7 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Define os cantos atuais da área de seleção
+    /// Sets the current corners of the selection area
     /// </summary>
     /// <param name="corners"></param>
     public void SetCorners(Voxel[] corners)
@@ -149,7 +149,7 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Cria uma "caixa" de voxels a partir dos cantos atuais e com uma determinada altura
+    /// Creates a "box" of voxels from the current corners and with a certain height
     /// </summary>
     /// <param name="height"></param>
     public void MakeBox(int height)
@@ -195,7 +195,7 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Limpa o grid, reestabelecendo os <see cref="VoxelState"/> de todos seus voxels
+    /// Clear the grid, resetting the <see cref="Voxel State"/> of all its voxels
     /// </summary>
     public void ClearGrid()
     {
@@ -207,7 +207,7 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Limpa o grid, removendo os Voxels com VoxelState.Red
+    /// Clean the grid, removing Voxels with VoxelState.Red
     /// </summary>
     public void ClearReds()
     {
@@ -223,9 +223,9 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Cria uma imagem do grid a partir dos <see cref="VoxelState"/> de seus voxels
+    /// Create a grid image from the <see cref="VoxelState"/> of your voxels
     /// </summary>
-    /// <param name="layer">Layer padrão é 0</param>
+    /// <param name="layer">Default layer is 0</param>
     /// <returns></returns>
     public Texture2D ImageFromGrid(int layer = 0, bool transparent = false)
     {
@@ -258,15 +258,15 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Define os <see cref="VoxelState"/> dos <see cref="Voxel"/> do grid a partir de uma imagem,
-    /// criando caixas para os pixels pretos, e a estrutura voxelizada para os pixels vermelhos
+    /// Defines the <see cref="VoxelState"/> of the <see cref="Voxel"/> of the grid from an image,
+    /// creating boxes for the black pixels, and the voxelized structure for the red pixels
     /// </summary>
-    /// <param name="image">A imagem de referência</param>
-    /// <param name="bottomLimit">A altura do limite inferior da estrutura</param>
-    /// <param name="topLimit">A altura do limite superior da estrutura</param>
-    /// <param name="thickness">A espessura da estura, ativando voxels extra</param>
-    /// <param name="sensitivity">A sensibilidade na leitura da imagem</param>
-    /// <param name="setBlacks">Define se os pixels pretos serão utilizados</param>
+    /// <param name="image">The reference image</param>
+    /// <param name="bottomLimit">The height of the lower bound of the structure</param>
+    /// <param name="topLimit">The height of the top limit of the structure</param>
+    /// <param name="thickness">The thickness of the structure, enabling extra voxels</param>
+    /// <param name="sensitivity">The sensitivity when reading the image</param>
+    /// <param name="setBlacks">Defines whether black pixels will be used</param>
     public void SetStatesFromImage(Texture2D image, float bottomLimit, float topLimit, int thickness, float sensitivity, bool setBlacks = false)
     {
         int startY = Mathf.RoundToInt(bottomLimit * (Size.y - 1));
@@ -313,7 +313,7 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Atualiza o preview do novo tamanho do grid
+    /// Updates the preview of the new grid size
     /// </summary>
     /// <param name="size"></param>
     public void UpdatePreview(Vector3 size)
@@ -323,7 +323,7 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Determina a visibilidade do preview do novo tamanho do grid
+    /// Determines the visibility of the new grid size preview
     /// </summary>
     /// <param name="state"></param>
     public void ShowPreview(bool state)
@@ -333,10 +333,10 @@ public class VoxelGrid
 
     #endregion
 
-    #region Métodos privaods
+    #region Private Methods
 
     /// <summary>
-    /// Cria os voxels do grid
+    /// Create grid voxels
     /// </summary>
     void CreateVoxels()
     {
@@ -370,7 +370,7 @@ public class VoxelGrid
     }
 
     /// <summary>
-    /// Retorna o segundo canto possível a partir de uma origem e um tamanho
+    /// Returns the second possible corner from an origin and size
     /// </summary>
     /// <param name="origin"></param>
     /// <param name="size"></param>
@@ -395,7 +395,7 @@ public class VoxelGrid
 
     #endregion
 
-    #region Métodos auxiliares
+    #region Auxiliary methods
 
     /// <summary>
     /// Get the Voxels of the <see cref="VoxelGrid"/>

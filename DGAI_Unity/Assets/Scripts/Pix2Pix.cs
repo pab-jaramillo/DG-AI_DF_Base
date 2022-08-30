@@ -4,12 +4,12 @@ using UnityEngine;
 using Unity.Barracuda;
 
 /// <summary>
-/// Esta classe permite a execu��o de um modelo treinado de Pix2Pix para
-/// realizer infer�ncias a partir de imagens novas
+/// This class allows the execution of a Pix2Pix trainer model to
+/// make inferences from new images
 /// </summary>
 public class Pix2Pix
 {
-    #region Campos e propriedades
+    #region Fields and properties
 
     NNModel _modelAsset;
     Model _loadedModel;
@@ -20,43 +20,43 @@ public class Pix2Pix
     #region Construtor
 
     /// <summary>
-    /// Construtor de um objeto de infer�ncia Pix2pix
+    /// Pix2pix inference object builder
     /// </summary>
     public Pix2Pix()
     {
-        _modelAsset = Resources.Load<NNModel>("NeuralModels/treinado");
+        _modelAsset = Resources.Load<NNModel>("NeuralModels/trained");
         _loadedModel = ModelLoader.Load(_modelAsset);
         _worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, _loadedModel);
     }
 
     #endregion
 
-    #region M�todos p�blicos
+    #region Public Methods
 
-    // 01 Criar o m�todo de previs�o do modelo
+    // 01 Creates a model prediction method
     /// <summary>
-    /// Executa o modelo de infer�ncia em uma imagem e gera a previs�o de uma imagem traduzida
+    /// Runs the inference model on an image and generates the prediction of a translated image
     /// </summary>
     /// <param name="image"></param>
     /// <returns></returns>
     public Texture2D Predict(Texture2D image)
     {
-        // 02 Traduz a imagem original para um tensor de 3 canais (RGB)
+        // 02 Translates the original image to a 3-channel (RGB) tensor
         Tensor imageTensor = new Tensor(image, channels: 3);
 
-        // 03 Normaliza o tensor para o campo que o modelo espera
+        // 03 Normalizes the tensor to the field that the model expects
         var normalisedInput = NormaliseTensor(imageTensor, 0f, 1f, -1f, 1f);
 
-        // 04 Executa o modelo no tensor
+        // 04 Run the model on the tensor
         _worker.Execute(normalisedInput);
 
-        // 05 Retorna o resultado da previs�o do modelo
+        // 05 Returns the model prediction result
         var outputTensor = _worker.PeekOutput();
 
-        // 07 Traduz o tensor para uma imagem
+        // 07 Translate the tensor to an image
         Texture2D prediction = Tensor2Image(outputTensor, image);
 
-        // 08 Descarta os tensores utilizados
+        // 08 Discard used tensors
         imageTensor.Dispose();
         normalisedInput.Dispose();
         outputTensor.Dispose();
@@ -66,10 +66,10 @@ public class Pix2Pix
 
     #endregion
 
-    #region M�todos privados
+    #region Private Methods
 
     /// <summary>
-    /// Traduz um tensor em Texture2D
+    /// Translate a tensor in Texture2D
     /// </summary>
     /// <param name="inputTensor"></param>
     /// <param name="inputTexture"></param>
@@ -91,7 +91,7 @@ public class Pix2Pix
     }
 
     /// <summary>
-    /// Normaliza um tensor para um campo determinado
+    /// Normalizes a tensor to a given field
     /// </summary>
     /// <param name="inputTensor"></param>
     /// <param name="a1">M�nimo original</param>

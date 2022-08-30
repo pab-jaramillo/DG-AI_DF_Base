@@ -6,28 +6,28 @@ using UnityEngine.UI;
 using System.IO;
 
 /// <summary>
-/// Determina o est�gio atual da aplica��o
+/// Determines the current stage of the application
 /// </summary>
 public enum AppStage { Neutral = 0, Selecting = 1, Done = 2 }
 
 /// <summary>
-/// Classe que gerencia o ambiente da aplica��o
+/// Class that manages the application environment
 /// </summary>
 public class EnvironmentManager : MonoBehaviour
 {
-    #region Campos privados
+    #region Private Fields
 
     VoxelGrid _grid;
     Voxel[] _corners;
     AppStage _stage;
-    /// <summary>Determina a altura atual da caixas a serem criadas</summary>
+    /// <summary>Determines the current height of the boxes to be created</summary>
     int _height;
 
-    /// <summary>Seed para controle dos n�meros aleat�rios</summary>
+    /// <summary>Seed to control random numbers</summary>
     int _seed = 666;
 
-    // 09 (p2p) Cria o objeto de infer�ncia do modelo Pix2Pix
-    /// <summary>Objeto de previs�o do modelo Pix2Pix</summary>
+    // 09 (p2p) Creates the Pix2Pix model inference object
+    /// <summary>Pix2Pix model prediction object</summary>
     Pix2Pix _pix2pix;
 
     Texture2D _sourceImage;
@@ -35,28 +35,28 @@ public class EnvironmentManager : MonoBehaviour
 
     #endregion
 
-    #region M�todos do Unity
+    #region Unity Methods
     void Start()
     {
-        // Coleta o UIManager
+        // UIManager
         _uiManager = GameObject.Find("UIManager").transform.GetComponent<UIManager>();
-        if (_uiManager == null) Debug.LogError("UIManager n�o foi encontrado!");
+        if (_uiManager == null) Debug.LogError("UIManager not found!");
 
-        // Define as imagens que podem ser utilizadas manualmente
+        // Defines images that can be used manually
         _sourceImage = _uiManager.SetDropdownSources();
 
-        // Inicializa o motor de n�meros aleat�rios e a aplica��o
+        // Starts the random number engine and the application
         Random.InitState(_seed);
         _stage = AppStage.Neutral;
 
-        // Inicializa o grid que ser� trabalhado
+        // Initializes the grid to be worked on
         _corners = new Voxel[2];
         var gridSize = _uiManager.GridSize;
         _height = gridSize.y;
         var maxSize = _uiManager.MaxGridSize;
         _grid = new VoxelGrid(gridSize, maxSize, transform.position, 1f, transform);
 
-        // 10 (p2p) Inicializa o objeto de infer�ncia do modelo Pix2Pix
+        // 10 (p2p) Initializes the Pix2Pix model inference object
         _pix2pix = new Pix2Pix();
     }
 
@@ -64,18 +64,18 @@ public class EnvironmentManager : MonoBehaviour
     {
         HandleDrawing();
         HandleHeight();
-        // Limpar o grid utilizando a tecla "C"
+        // Clear the grid using the "C" key
         if (Input.GetKeyDown(KeyCode.C)) _grid.ClearGrid();
 
-        // 05 Cria caixas aleat�rias utilizando a tecla "A"
+        // 05 Create random boxes using the "A" key
         if (Input.GetKeyDown(KeyCode.A))
         {
-            // 06 Limpa o grid
+            // 06 Clear the grid
             _grid.ClearGrid();
-            // 07 Cria uma caixa aleat�ria
+            // 07 Create a random box
             //CreateRandomBox(3, 10, 5, 15);
 
-            // 10 Cria diversas caixas aleat�rias
+            // 10 Creates several random boxes
             PopulateRandomBoxes(Random.Range(3, 10), 5, 15, 5, 15);
             var image = _grid.ImageFromGrid();
             _uiManager.SetInputImage(Sprite.Create(image, new Rect(0, 0, image.width, image.height), Vector2.one * 0.5f));
@@ -84,9 +84,9 @@ public class EnvironmentManager : MonoBehaviour
 
     #endregion
 
-    // 01 Criar m�todo para cria��o de caixas aleat�rias
+    // 01 Method to create random boxes
     /// <summary>
-    /// Cria uma caixa aleat�riamente no grid, dentro dos limities de tamanho definidos
+    /// Randomly creates a box on the grid, within the defined size limits
     /// </summary>
     /// <param name="minX"></param>
     /// <param name="maxX"></param>
@@ -94,25 +94,25 @@ public class EnvironmentManager : MonoBehaviour
     /// <param name="maxZ"></param>
     private void CreateRandomBox(int minX, int maxX, int minZ, int maxZ)
     {
-        // 02 Define as coordenadas de origem aleatoriamente no grid
+        // 02 Sets the origin coordinates randomly on the grid
         var oX = Random.Range(0, _grid.Size.x);
         var oZ = Random.Range(0, _grid.Size.z);
 
         var origin = new Vector3Int(oX, 0, oZ);
 
-        // 03 Define o tamaho da caixa 
+        // 03 Sets the size of the box
         var sizeX = Random.Range(minX, maxX);
         var sizeY = Random.Range(3, _grid.Size.y);
         var sizeZ = Random.Range(minZ, maxZ);
         var size = new Vector3Int(sizeX, sizeY, sizeZ);
 
-        // 04 Cria a caixa
+        // 04 Create the box
         _grid.BoxFromCorner(_grid.Voxels[origin.x, origin.y, origin.z], size);
     }
 
-    // 08 Criar o m�todo para cria��o de diversas caixas aleat�rias
+    // 08 Method to create several random boxes
     /// <summary>
-    /// Cria m�ltiplas caixas aleat�rias no grid com as propriedades definidas
+    /// Create multiple random boxes in the grid with the defined properties
     /// </summary>
     /// <param name="quantity">Quantidade de caixas</param>
     /// <param name="minX">Tamanho m�nimo em X</param>
@@ -128,11 +128,11 @@ public class EnvironmentManager : MonoBehaviour
         }
     }
 
-    // 11 Criar o m�todo para cria��o do set de treinamento
+    // 11 Method to create the training set
     /// <summary>
-    /// Cria m�ltiplas caixas aleat�rias no grid, diversas vezes e 
-    /// com quantidades vari�veis, de acordo com as propriedades definidas,
-    /// e salva imagens correspondentes no disco
+    /// Creates multiple random boxes on the grid, several times and
+    /// with variable amounts, according to the defined properties,
+    /// and save corresponding images to disk
     /// </summary>
     /// <param name="samples">Quantidade de grids/imagens a gerar</param>
     /// <param name="minQuantity">Quantidade m�nima de caixas por sample</param>
@@ -143,60 +143,60 @@ public class EnvironmentManager : MonoBehaviour
     /// <param name="maxZ">Tamanho m�ximo em Z</param>
     public void PopulateBoxesAndSave(int samples, int minQuantity, int maxQuantity, int minX, int maxX, int minZ, int maxZ)
     {
-        // 12 Garatir que a pasta de destino existe
+        // 12 Ensure the destination folder exists
         string directory = Path.Combine(Directory.GetCurrentDirectory(), "Samples");
         if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
-        // 13 Iterar de acordo com a quantidade de samples
+        // 13 Iterate according to the amount of samples
         for (int i = 0; i < samples; i++)
         {
-            // 14 Limpar o grid
+            // 14 Cleans Grid
             _grid.ClearGrid();
-            // 15 Definir quantidade aleat�ria e criar as caixas aleatoriamente
+            // 15 Set random quantity and create the boxes randomly
             int quantity = Random.Range(minQuantity, maxQuantity);
             PopulateRandomBoxes(quantity, minX, maxX, minZ, maxZ);
 
-            // 16 Definir a imagem para o atual estado do grid
+            // 16 Set the image to the current grid state
             var image = _grid.ImageFromGrid(transparent: true);
-            // 17 Redimensionar a imagem para 256 x 256 px
+            // 17 Resize the image to 256 x 256 px
             var resized = ImageReadWrite.Resize256(image, Color.white);
 
-            // 18 Criar o arquivo e salvar a imagem no disco
+            // 18 Creates the file and save the image to disk
             var fileName = Path.Combine(directory, $"sample_{i.ToString("D4")}.png");
             ImageReadWrite.SaveImage(resized, fileName);
         }
     }
 
     /// <summary>
-    /// Exp�e o m�todo de cria��o do set de treinamento para um bot�o
+    /// Exposes the training set creation method for a button
     /// </summary>
     public void GenerateSampleSet()
     {
-        // 19 Criar e salvar as imagens aleat�rias
+        // 19 Create and save random images
         PopulateBoxesAndSave(500, 3, 10, 3, 10, 3, 10);
     }
 
-    // 11 (p2p) Criar o m�todo de previs�o e atualiza��o do grid
+    // 11 (p2p) Create the grid prediction and update method
     /// <summary>
-    /// Executa o modelo Pix2Pix no atual estado do <see cref="VoxelGrid"/> e atualiza
-    /// o estado dos Voxels de acordo com os pixels da imagem resultante
+    /// Run the Pix2Pix model in the current state of <see cref="VoxelGrid"/> and update
+    /// the state of the Voxels according to the pixels of the resulting image
     /// </summary>
     public void PredictAndUpdate()
     {
-        // 12 (p2p) Limpar voxels vermelhos e gerar imagem
+        // 12 (p2p) Clear red voxels and generate image
         _grid.ClearReds();
         var image = _grid.ImageFromGrid();
 
-        // 13 (p2p) Redimensionar image
+        // 13 (p2p) Resize image
         var resized = ImageReadWrite.Resize256(image, Color.white);
 
-        // 14 (p2p) Gerar previs�o
+        // 14 (p2p) Generate prediction
         _sourceImage = _pix2pix.Predict(resized);
 
-        // 15 (p2p) Redimensionar imagem para o tamnho do grid e atualizar os voxels vermelhos
+        // 15 (p2p) Resize image to grid size and update red voxels
         TextureScale.Point(_sourceImage, _grid.Size.x, _grid.Size.z);
         UpdateReds();
 
-        // 16 (p2p) Exibir as imagens produzidas na UI
+        // 16 (p2p) View the produced images in the UI
         _uiManager.SetInputImage(Sprite.Create(resized, new Rect(0, 0, resized.width, resized.height), Vector2.one * 0.5f));
         _uiManager.SetOutputImage(Sprite.Create(_sourceImage, new Rect(0, 0, _sourceImage.width, _sourceImage.height), Vector2.one * 0.5f));
 
@@ -206,7 +206,7 @@ public class EnvironmentManager : MonoBehaviour
     {
         if (name == "")
         {
-            Debug.Log("N�o � poss�vel salvar arquivo sem nome!");
+            Debug.Log("Unable to save file without name!");
             return;
         }
         var directory = Path.Combine(Directory.GetCurrentDirectory(), $"Grids");
@@ -217,7 +217,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Exp�e a fun��o de atualizar os voxels com estado <see cref="VoxelState.Red"/>
+    /// Exposes the function of updating voxels with state <see cref="VoxelState.Red"/>
     /// </summary>
     public void UpdateReds()
     {
@@ -231,7 +231,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gerencia o processo de desenho de caixas na interface
+    /// Manages the box design process in the interface
     /// </summary>
     private void HandleDrawing()
     {
@@ -276,13 +276,13 @@ public class EnvironmentManager : MonoBehaviour
             _grid.MakeBox(_height);
             _stage = AppStage.Neutral;
 
-            // 17 (p2p) Executar a previs�o ap�s o t�rmino do processo de desenho
+            // 17 (p2p) Run the prediction after the design process is finished
             PredictAndUpdate();
         }
     }
 
     /// <summary>
-    /// Gerencia o controle da altura das caixas a serem criadas na interface
+    /// Manages the control of the height of the boxes to be created in the interface
     /// </summary>
     private void HandleHeight()
     {
@@ -299,7 +299,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Atualiza o tamanho do grid
+    /// Update grid size
     /// </summary>
     /// <param name="newSize"></param>
     public void UpdateGridSize(Vector3Int newSize)
@@ -310,7 +310,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Executa a previs�o do novo tamanho do grid
+    /// Runs the prediction of the new grid size
     /// </summary>
     /// <param name="newSize"></param>
     public void PreviewGridSize(Vector3Int newSize)
@@ -320,7 +320,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Exp�e a fun��o de ler uma imagem para a UI
+    /// Exposes the function of reading an image to the UI
     /// </summary>
     public void ReadImage()
     {
@@ -336,7 +336,7 @@ public class EnvironmentManager : MonoBehaviour
 
 
     /// <summary>
-    /// Exp�e a funl�ao de limpar o grid para a UI
+    /// Clears the grid function for the UI
     /// </summary>
     public void ClearGrid()
     {
@@ -344,7 +344,7 @@ public class EnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Exp�e a fun��o de atualizar a imagem atual pela UI
+    /// Update current Image UI
     /// </summary>
     public void UpdateCurrentImage()
     {
